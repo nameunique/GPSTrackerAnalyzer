@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:gps_tracker_analyzer/core/theme/app_colors.dart';
+import 'package:gps_tracker_analyzer/features/live_sensors/live_sensors_screen.dart';
 import 'package:gps_tracker_analyzer/features/performance_report/performance_report_screen.dart';
 import 'package:gps_tracker_analyzer/features/recording/recording_screen.dart';
 import 'package:gps_tracker_analyzer/features/welcome/welcome_screen.dart';
@@ -10,6 +11,7 @@ class GpsTrackerApp extends StatelessWidget {
   static const String routeWelcome = '/';
   static const String routeRecording = '/recording';
   static const String routeReport = '/report';
+  static const String routeLiveSensors = '/live-sensors';
 
   @override
   Widget build(BuildContext context) {
@@ -33,6 +35,7 @@ class GpsTrackerApp extends StatelessWidget {
       routes: {
         routeWelcome: (_) => const WelcomeScreen(),
         routeRecording: (_) => const RecordingScreen(),
+        routeLiveSensors: (_) => const LiveSensorsScreen(),
       },
       onGenerateRoute: (settings) {
         if (settings.name == routeReport) {

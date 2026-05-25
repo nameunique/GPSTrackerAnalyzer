@@ -46,6 +46,15 @@ class _RecordingView extends StatelessWidget {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.sensors),
+            tooltip: 'Датчики в реальном времени',
+            onPressed: () {
+              Navigator.pushNamed(context, GpsTrackerApp.routeLiveSensors);
+            },
+          ),
+        ],
       ),
       body: BlocConsumer<RecordingCubit, RecordingState>(
         listenWhen: (p, c) => c.errorMessage != null && c.errorMessage != p.errorMessage,
@@ -85,6 +94,15 @@ class _RecordingView extends StatelessWidget {
                         spacing: 8,
                         runSpacing: 8,
                         children: [
+                          OutlinedButton(
+                            onPressed: () {
+                              Navigator.pushNamed(
+                                context,
+                                GpsTrackerApp.routeLiveSensors,
+                              );
+                            },
+                            child: const Text('Датчики в реальном времени'),
+                          ),
                           FilledButton(
                             onPressed: () =>
                                 context.read<RecordingCubit>().ensurePermissions(),
