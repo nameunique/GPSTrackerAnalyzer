@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gps_tracker_analyzer/app.dart';
 import 'package:gps_tracker_analyzer/core/di/injection.dart';
-import 'package:gps_tracker_analyzer/domain/repositories/session_store.dart';
 import 'package:gps_tracker_analyzer/core/theme/app_colors.dart';
+import 'package:gps_tracker_analyzer/domain/entities/recorded_loop.dart';
 import 'package:gps_tracker_analyzer/domain/repositories/gps_telemetry_repository.dart';
+import 'package:gps_tracker_analyzer/domain/repositories/session_store.dart';
 import 'package:gps_tracker_analyzer/features/recording/recording_cubit.dart';
 import 'package:gps_tracker_analyzer/features/recording/recording_state.dart';
 
@@ -14,10 +15,9 @@ class RecordingScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => RecordingCubit(
-        sl<GpsTelemetryRepository>(),
-        sl<SessionStore>(),
-      )..ensurePermissions(),
+      create: (_) =>
+          RecordingCubit(sl<GpsTelemetryRepository>(), sl<SessionStore>())
+            ..loadLoops(),
       child: const _RecordingView(),
     );
   }
@@ -41,32 +41,30 @@ class _RecordingView extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.scaffoldBlue,
       appBar: AppBar(
-        title: const Text('Работа с устройством'),
+        title: const Text('Запись лупа'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.sensors),
-            tooltip: 'Датчики в реальном времени',
-            onPressed: () {
-              Navigator.pushNamed(context, GpsTrackerApp.routeLiveSensors);
-            },
-          ),
-        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => context.read<RecordingCubit>().addLoop(),
+        child: const Icon(Icons.add),
       ),
       body: BlocConsumer<RecordingCubit, RecordingState>(
-        listenWhen: (p, c) => c.errorMessage != null && c.errorMessage != p.errorMessage,
+        listenWhen: (p, c) =>
+            c.errorMessage != null && c.errorMessage != p.errorMessage,
         listener: (context, state) {
           final msg = state.errorMessage;
           if (msg != null) {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(msg)));
           }
         },
         builder: (context, state) {
           return ListView(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 96),
             children: [
               Card(
                 color: AppColors.cardWhite,
@@ -82,144 +80,170 @@ class _RecordingView extends StatelessWidget {
                         'Статус: ${_connectionLabel(state.connection)}',
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
-                      if (!state.permissionsGranted) ...[
-                        const SizedBox(height: 8),
-                        Text(
-                          'Разрешения не выданы — нажмите «Запросить разрешения».',
-                          style: TextStyle(color: Colors.grey.shade700),
-                        ),
-                      ],
-                      const SizedBox(height: 12),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          OutlinedButton(
-                            onPressed: () {
-                              Navigator.pushNamed(
-                                context,
-                                GpsTrackerApp.routeLiveSensors,
-                              );
-                            },
-                            child: const Text('Датчики в реальном времени'),
-                          ),
-                          FilledButton(
-                            onPressed: () =>
-                                context.read<RecordingCubit>().ensurePermissions(),
-                            child: const Text('Запросить разрешения'),
-                          ),
-                          FilledButton.tonal(
-                            onPressed: state.connection ==
-                                    GpsTelemetryConnectionState.scanning
-                                ? null
-                                : () => context.read<RecordingCubit>().scan(),
-                            child: const Text('Сканировать'),
-                          ),
-                          OutlinedButton(
-                            onPressed: () =>
-                                context.read<RecordingCubit>().stopScan(),
-                            child: const Text('Стоп скан'),
-                          ),
-                          if (state.connection ==
-                              GpsTelemetryConnectionState.connected)
-                            OutlinedButton(
-                              onPressed: () =>
-                                  context.read<RecordingCubit>().disconnect(),
-                              child: const Text('Отключить'),
-                            ),
-                        ],
+                      const SizedBox(height: 8),
+                      Text(
+                        state.connection ==
+                                GpsTelemetryConnectionState.connected
+                            ? 'Можно создавать и записывать лупы.'
+                            : 'Подключитесь к Bluetooth-устройству через шторку сверху.',
+                        style: TextStyle(color: Colors.grey.shade700),
                       ),
                     ],
                   ),
                 ),
               ),
               const SizedBox(height: 16),
-              Text(
-                'Устройства (${state.devices.length})',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16,
-                ),
-              ),
-              const SizedBox(height: 8),
-              ...state.devices.map((d) {
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Material(
-                    color: AppColors.cardWhite,
-                    borderRadius: BorderRadius.circular(12),
-                    child: ListTile(
-                      title: Text(d.name ?? 'Без имени'),
-                      subtitle: Text(d.remoteId),
-                      trailing: state.connection ==
-                              GpsTelemetryConnectionState.connected
-                          ? null
-                          : const Icon(Icons.link),
-                      onTap: state.connection ==
-                              GpsTelemetryConnectionState.connected
-                          ? null
-                          : () => context.read<RecordingCubit>().connect(d.remoteId),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Лупы (${state.loops.length})',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                      ),
                     ),
                   ),
-                );
-              }),
-              const SizedBox(height: 16),
-              Card(
-                color: AppColors.cardWhite,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text(
-                        state.isRecording
-                            ? 'Запись: ${state.sampleCount} точек'
-                            : 'Запись остановлена',
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      const SizedBox(height: 12),
-                      FilledButton(
-                        onPressed: !state.isRecording &&
-                                state.connection ==
-                                    GpsTelemetryConnectionState.connected
-                            ? () =>
-                                context.read<RecordingCubit>().startRecording()
-                            : null,
-                        child: const Text('Начать запись прогона'),
-                      ),
-                      const SizedBox(height: 8),
-                      FilledButton(
-                        style: FilledButton.styleFrom(
-                          backgroundColor: AppColors.validRed,
-                        ),
-                        onPressed: state.isRecording
-                            ? () async {
-                                final path = await context
-                                    .read<RecordingCubit>()
-                                    .stopRecording();
-                                if (!context.mounted) return;
-                                if (path != null) {
-                                  await Navigator.pushNamed(
-                                    context,
-                                    GpsTrackerApp.routeReport,
-                                    arguments: path,
-                                  );
-                                }
-                              }
-                            : null,
-                        child: const Text('Остановить и отчёт'),
-                      ),
-                    ],
+                  FilledButton.icon(
+                    onPressed: () => context.read<RecordingCubit>().addLoop(),
+                    icon: const Icon(Icons.add),
+                    label: const Text('Новый'),
                   ),
-                ),
+                ],
               ),
+              const SizedBox(height: 8),
+              if (state.loops.isEmpty)
+                Card(
+                  color: AppColors.cardWhite,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: const Padding(
+                    padding: EdgeInsets.all(20),
+                    child: Text(
+                      'Нажмите +, чтобы создать первый луп для записи.',
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                )
+              else
+                ...state.loops.map((loop) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: _LoopTile(loop: loop, state: state),
+                  );
+                }),
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+class _LoopTile extends StatelessWidget {
+  const _LoopTile({required this.loop, required this.state});
+
+  final RecordedLoop loop;
+  final RecordingState state;
+
+  String _formatDuration(double seconds) {
+    final total = seconds.round();
+    final m = (total ~/ 60).toString().padLeft(2, '0');
+    final s = (total % 60).toString().padLeft(2, '0');
+    return '$m:$s';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isActive = state.activeLoopId == loop.id && state.isRecording;
+    final canStart =
+        !state.isRecording &&
+        !loop.isSaved &&
+        state.connection == GpsTelemetryConnectionState.connected;
+
+    return Card(
+      color: AppColors.cardWhite,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    loop.title,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                Chip(
+                  label: Text(
+                    isActive
+                        ? 'Запись'
+                        : loop.isSaved
+                        ? 'Сохранён'
+                        : 'Новый',
+                  ),
+                  backgroundColor: isActive
+                      ? AppColors.primaryBlue.withValues(alpha: 0.15)
+                      : null,
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Точек: ${isActive ? state.sampleCount : loop.sampleCount} • '
+              'Длительность: ${_formatDuration(loop.durationSec)}',
+              style: TextStyle(color: Colors.grey.shade700),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                FilledButton(
+                  onPressed: canStart
+                      ? () => context.read<RecordingCubit>().startRecording(
+                          loop.id,
+                        )
+                      : null,
+                  child: const Text('Старт записи'),
+                ),
+                FilledButton.tonal(
+                  onPressed: isActive
+                      ? () => context.read<RecordingCubit>().stopRecording()
+                      : null,
+                  child: const Text('Стоп записи'),
+                ),
+                OutlinedButton.icon(
+                  onPressed: loop.isSaved
+                      ? () {
+                          Navigator.pushNamed(
+                            context,
+                            GpsTrackerApp.routeReport,
+                            arguments: loop.filePath,
+                          );
+                        }
+                      : null,
+                  icon: const Icon(Icons.analytics),
+                  label: const Text('Анализ'),
+                ),
+                OutlinedButton.icon(
+                  onPressed: loop.isSaved
+                      ? () => context.read<RecordingCubit>().exportLoop(loop)
+                      : null,
+                  icon: const Icon(Icons.file_upload),
+                  label: const Text('Экспорт'),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

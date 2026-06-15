@@ -1,19 +1,15 @@
 import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:gps_tracker_analyzer/core/permissions/ble_permissions.dart';
-import 'package:gps_tracker_analyzer/domain/entities/ble_device_info.dart';
 import 'package:gps_tracker_analyzer/domain/entities/gps_sample.dart';
+import 'package:gps_tracker_analyzer/domain/entities/recorded_loop.dart';
 import 'package:gps_tracker_analyzer/domain/repositories/gps_telemetry_repository.dart';
 import 'package:gps_tracker_analyzer/domain/repositories/session_store.dart';
 import 'package:gps_tracker_analyzer/features/recording/recording_state.dart';
 
 class RecordingCubit extends Cubit<RecordingState> {
   RecordingCubit(this._telemetry, this._sessionStore)
-      : super(const RecordingState()) {
-    _devicesSub = _telemetry.discoveredDevices.listen((devices) {
-      emit(state.copyWith(devices: devices));
-    });
+    : super(const RecordingState()) {
     _connSub = _telemetry.connectionState.listen((connection) {
       emit(state.copyWith(connection: connection, clearError: true));
     });
@@ -22,104 +18,144 @@ class RecordingCubit extends Cubit<RecordingState> {
   final GpsTelemetryRepository _telemetry;
   final SessionStore _sessionStore;
 
-  StreamSubscription<List<BleDeviceInfo>>? _devicesSub;
   StreamSubscription<GpsTelemetryConnectionState>? _connSub;
   StreamSubscription<GpsSample>? _recordSub;
 
   ActiveSession? _activeSession;
+  DateTime? _recordStartedAt;
   int _recordingSamples = 0;
 
-  Future<void> ensurePermissions() async {
-    final ok = await ensureBlePermissions();
-    emit(state.copyWith(permissionsGranted: ok));
-    if (!ok) {
-      emit(state.copyWith(
-        errorMessage: 'Нужны разрешения Bluetooth и геолокации',
-      ));
-    }
-  }
-
-  Future<void> scan() async {
-    emit(state.copyWith(clearError: true));
-    if (!state.permissionsGranted) {
-      await ensurePermissions();
-      if (!state.permissionsGranted) return;
-    }
+  Future<void> loadLoops() async {
     try {
-      await _telemetry.startScan();
+      final loops = await _sessionStore.listLoops();
+      emit(state.copyWith(loops: loops, clearError: true));
     } catch (e) {
-      emit(state.copyWith(errorMessage: 'Сканирование: $e'));
+      emit(state.copyWith(errorMessage: 'Загрузка лупов: $e'));
     }
   }
 
-  Future<void> stopScan() async {
-    try {
-      await _telemetry.stopScan();
-    } catch (e) {
-      emit(state.copyWith(errorMessage: 'Остановка сканирования: $e'));
-    }
+  void addLoop() {
+    if (state.isRecording) return;
+    final now = DateTime.now();
+    final loop = RecordedLoop(
+      id: now.microsecondsSinceEpoch.toString(),
+      title: 'Луп ${state.loops.length + 1}',
+      createdAt: now,
+    );
+    emit(state.copyWith(loops: [loop, ...state.loops], clearError: true));
   }
 
-  Future<void> connect(String remoteId) async {
-    emit(state.copyWith(clearError: true));
-    try {
-      await _telemetry.connect(remoteId);
-    } catch (e) {
-      emit(state.copyWith(errorMessage: 'Подключение: $e'));
-    }
-  }
-
-  Future<void> disconnect() async {
-    if (state.isRecording) {
-      await stopRecording();
-    }
-    emit(state.copyWith(clearError: true));
-    try {
-      await _telemetry.disconnect();
-    } catch (e) {
-      emit(state.copyWith(errorMessage: 'Отключение: $e'));
-    }
-  }
-
-  Future<void> startRecording() async {
+  Future<void> startRecording(String loopId) async {
     if (state.connection != GpsTelemetryConnectionState.connected) {
-      emit(state.copyWith(
-        errorMessage: 'Сначала подключитесь к устройству',
-      ));
+      emit(
+        state.copyWith(
+          errorMessage: 'Сначала подключитесь к устройству через шторку',
+        ),
+      );
       return;
     }
     if (state.isRecording) return;
 
+    final loop = _findLoop(loopId);
+    if (loop == null) return;
+
     await _recordSub?.cancel();
-    _activeSession = await _sessionStore.startSession();
+    _activeSession = await _sessionStore.startSession(loop.id);
+    _recordStartedAt = DateTime.now();
     _recordingSamples = 0;
-    emit(state.copyWith(isRecording: true, sampleCount: 0, clearError: true));
+    emit(
+      state.copyWith(
+        isRecording: true,
+        activeLoopId: loop.id,
+        sampleCount: 0,
+        clearError: true,
+      ),
+    );
 
     _recordSub = _telemetry.samples.listen((sample) {
       _sessionStore.appendSample(sample);
       _recordingSamples++;
-      emit(state.copyWith(sampleCount: _recordingSamples));
+      emit(
+        state.copyWith(
+          sampleCount: _recordingSamples,
+          loops: _replaceLoop(
+            loop.id,
+            loop.copyWith(sampleCount: _recordingSamples),
+          ),
+        ),
+      );
     });
   }
 
-  Future<String?> stopRecording() async {
+  Future<RecordedLoop?> stopRecording() async {
     if (!state.isRecording) return null;
 
     await _recordSub?.cancel();
     _recordSub = null;
 
+    final activeId = state.activeLoopId;
     final sessionPath = _activeSession?.filePath;
     _activeSession = null;
 
     final savedPath = await _sessionStore.endSession();
+    final path = savedPath ?? sessionPath;
+    final currentLoop = activeId == null ? null : _findLoop(activeId);
+    if (currentLoop == null || path == null) {
+      emit(
+        state.copyWith(
+          isRecording: false,
+          clearError: true,
+          clearActiveLoop: true,
+        ),
+      );
+      return null;
+    }
 
-    emit(state.copyWith(isRecording: false, clearError: true));
-    return savedPath ?? sessionPath;
+    final startedAt = _recordStartedAt;
+    _recordStartedAt = null;
+    final duration = startedAt == null
+        ? 0.0
+        : DateTime.now().difference(startedAt).inMilliseconds / 1000;
+    final savedLoop = currentLoop.copyWith(
+      filePath: path,
+      sampleCount: _recordingSamples,
+      durationSec: duration,
+    );
+    await _sessionStore.upsertLoop(savedLoop);
+
+    emit(
+      state.copyWith(
+        isRecording: false,
+        loops: _replaceLoop(savedLoop.id, savedLoop),
+        clearError: true,
+        clearActiveLoop: true,
+      ),
+    );
+    return savedLoop;
+  }
+
+  Future<void> exportLoop(RecordedLoop loop) async {
+    final exported = await _sessionStore.exportLoop(loop);
+    if (exported == null) {
+      emit(state.copyWith(errorMessage: 'Не удалось экспортировать луп'));
+      return;
+    }
+    emit(state.copyWith(errorMessage: 'Луп экспортирован', clearError: false));
+  }
+
+  RecordedLoop? _findLoop(String id) {
+    for (final loop in state.loops) {
+      if (loop.id == id) return loop;
+    }
+    return null;
+  }
+
+  List<RecordedLoop> _replaceLoop(String id, RecordedLoop updated) {
+    return state.loops.map((loop) => loop.id == id ? updated : loop).toList();
   }
 
   @override
   Future<void> close() async {
-    await _devicesSub?.cancel();
     await _connSub?.cancel();
     await _recordSub?.cancel();
     return super.close();
