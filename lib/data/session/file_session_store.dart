@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:downloadsfolder/downloadsfolder.dart';
 import 'package:gps_tracker_analyzer/domain/entities/gps_sample.dart';
+import 'package:gps_tracker_analyzer/domain/entities/recorded_loop.dart';
 import 'package:gps_tracker_analyzer/domain/repositories/session_store.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -11,10 +12,11 @@ class FileSessionStore implements SessionStore {
   String? _activeFilePath;
 
   @override
-  Future<ActiveSession> startSession() async {
+  Future<ActiveSession> startSession(String loopId) async {
     await endSession();
     final dir = await _resolveDumpDirectory();
-    final name = 'session_${DateTime.now().millisecondsSinceEpoch}.jsonl';
+    final name =
+        'loop_${loopId}_${DateTime.now().millisecondsSinceEpoch}.jsonl';
     final file = File('${dir.path}/$name');
     _sink = file.openWrite(mode: FileMode.writeOnly);
     _activeFilePath = file.path;
@@ -24,6 +26,11 @@ class FileSessionStore implements SessionStore {
   Future<Directory> _resolveDumpDirectory() async {
     // We write into app docs first, then export into Downloads on endSession().
     return getApplicationDocumentsDirectory();
+  }
+
+  Future<File> _indexFile() async {
+    final dir = await _resolveDumpDirectory();
+    return File('${dir.path}/loops_index.json');
   }
 
   @override
@@ -39,23 +46,64 @@ class FileSessionStore implements SessionStore {
 
     final srcPath = _activeFilePath;
     _activeFilePath = null;
-    if (srcPath == null) return null;
+    return srcPath;
+  }
 
-    // Export into public Downloads so user can find it in file manager.
-    // On Android 29+ this typically goes through MediaStore (no MANAGE_EXTERNAL_STORAGE).
+  @override
+  Future<List<RecordedLoop>> listLoops() async {
+    final file = await _indexFile();
+    if (!await file.exists()) return [];
+    try {
+      final raw = await file.readAsString();
+      final decoded = jsonDecode(raw);
+      if (decoded is! List) return [];
+      final loops =
+          decoded
+              .whereType<Map<String, dynamic>>()
+              .map(RecordedLoop.fromJson)
+              .toList()
+            ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      return loops;
+    } catch (_) {
+      return [];
+    }
+  }
+
+  @override
+  Future<void> upsertLoop(RecordedLoop loop) async {
+    final loops = await listLoops();
+    final existingIndex = loops.indexWhere((l) => l.id == loop.id);
+    if (existingIndex >= 0) {
+      loops[existingIndex] = loop;
+    } else {
+      loops.insert(0, loop);
+    }
+    loops.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+    final file = await _indexFile();
+    await file.writeAsString(
+      const JsonEncoder.withIndent(
+        '  ',
+      ).convert(loops.map((l) => l.toJson()).toList()),
+    );
+  }
+
+  @override
+  Future<String?> exportLoop(RecordedLoop loop) async {
+    final srcPath = loop.filePath;
+    if (srcPath == null || srcPath.isEmpty) return null;
+
     try {
       final src = File(srcPath);
       if (!await src.exists()) return null;
       final fileName = src.uri.pathSegments.isNotEmpty
           ? src.uri.pathSegments.last
-          : 'session.jsonl';
-
+          : '${loop.id}.jsonl';
       await copyFileIntoDownloadFolder(srcPath, fileName);
+      return srcPath;
     } catch (_) {
-      // Export to Downloads is best-effort; keep internal copy for in-app loading.
+      return null;
     }
-
-    return srcPath;
   }
 
   @override
@@ -70,7 +118,9 @@ class FileSessionStore implements SessionStore {
       final trimmed = line.trim();
       if (trimmed.isEmpty) continue;
       try {
-        out.add(GpsSample.fromJson(jsonDecode(trimmed) as Map<String, dynamic>));
+        out.add(
+          GpsSample.fromJson(jsonDecode(trimmed) as Map<String, dynamic>),
+        );
       } catch (_) {
         continue;
       }

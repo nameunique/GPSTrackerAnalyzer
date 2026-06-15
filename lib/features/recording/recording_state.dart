@@ -1,38 +1,41 @@
 import 'package:equatable/equatable.dart';
-import 'package:gps_tracker_analyzer/domain/entities/ble_device_info.dart';
+import 'package:gps_tracker_analyzer/domain/entities/recorded_loop.dart';
 import 'package:gps_tracker_analyzer/domain/repositories/gps_telemetry_repository.dart';
 
 class RecordingState extends Equatable {
   const RecordingState({
-    this.permissionsGranted = false,
     this.connection = GpsTelemetryConnectionState.idle,
-    this.devices = const [],
+    this.loops = const [],
     this.isRecording = false,
+    this.activeLoopId,
     this.sampleCount = 0,
     this.errorMessage,
   });
 
-  final bool permissionsGranted;
   final GpsTelemetryConnectionState connection;
-  final List<BleDeviceInfo> devices;
+  final List<RecordedLoop> loops;
   final bool isRecording;
+  final String? activeLoopId;
   final int sampleCount;
   final String? errorMessage;
 
   RecordingState copyWith({
-    bool? permissionsGranted,
     GpsTelemetryConnectionState? connection,
-    List<BleDeviceInfo>? devices,
+    List<RecordedLoop>? loops,
     bool? isRecording,
+    String? activeLoopId,
     int? sampleCount,
     String? errorMessage,
     bool clearError = false,
+    bool clearActiveLoop = false,
   }) {
     return RecordingState(
-      permissionsGranted: permissionsGranted ?? this.permissionsGranted,
       connection: connection ?? this.connection,
-      devices: devices ?? this.devices,
+      loops: loops ?? this.loops,
       isRecording: isRecording ?? this.isRecording,
+      activeLoopId: clearActiveLoop
+          ? null
+          : (activeLoopId ?? this.activeLoopId),
       sampleCount: sampleCount ?? this.sampleCount,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
     );
@@ -40,11 +43,11 @@ class RecordingState extends Equatable {
 
   @override
   List<Object?> get props => [
-        permissionsGranted,
-        connection,
-        devices,
-        isRecording,
-        sampleCount,
-        errorMessage,
-      ];
+    connection,
+    loops,
+    isRecording,
+    activeLoopId,
+    sampleCount,
+    errorMessage,
+  ];
 }
