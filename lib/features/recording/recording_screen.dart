@@ -41,15 +41,11 @@ class _RecordingView extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.scaffoldBlue,
       appBar: AppBar(
-        title: const Text('Запись лупа'),
+        title: const Text('Запись трека'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => context.read<RecordingCubit>().addLoop(),
-        child: const Icon(Icons.add),
       ),
       body: BlocConsumer<RecordingCubit, RecordingState>(
         listenWhen: (p, c) =>
@@ -64,7 +60,7 @@ class _RecordingView extends StatelessWidget {
         },
         builder: (context, state) {
           return ListView(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 96),
+            padding: const EdgeInsets.all(20),
             children: [
               Card(
                 color: AppColors.cardWhite,
@@ -84,7 +80,7 @@ class _RecordingView extends StatelessWidget {
                       Text(
                         state.connection ==
                                 GpsTelemetryConnectionState.connected
-                            ? 'Можно создавать и записывать лупы.'
+                            ? 'Можно создавать и записывать треки.'
                             : 'Подключитесь к Bluetooth-устройству через шторку сверху.',
                         style: TextStyle(color: Colors.grey.shade700),
                       ),
@@ -97,7 +93,7 @@ class _RecordingView extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      'Лупы (${state.loops.length})',
+                      'Треки (${state.loops.length})',
                       style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w600,
@@ -122,7 +118,7 @@ class _RecordingView extends StatelessWidget {
                   child: const Padding(
                     padding: EdgeInsets.all(20),
                     child: Text(
-                      'Нажмите +, чтобы создать первый луп для записи.',
+                      'Нажмите "Новый", чтобы создать первый трек для записи.',
                       textAlign: TextAlign.center,
                     ),
                   ),
@@ -153,6 +149,47 @@ class _LoopTile extends StatelessWidget {
     final m = (total ~/ 60).toString().padLeft(2, '0');
     final s = (total % 60).toString().padLeft(2, '0');
     return '$m:$s';
+  }
+
+  void _showSettings(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'Настройки записи',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 8),
+                ...TrackRecordingMode.values.map((mode) {
+                  return RadioListTile<TrackRecordingMode>(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(mode.label),
+                    value: mode,
+                    groupValue: loop.recordingMode,
+                    onChanged: (value) {
+                      if (value == null) return;
+                      context.read<RecordingCubit>().updateRecordingMode(
+                        loop.id,
+                        value,
+                      );
+                      Navigator.pop(sheetContext);
+                    },
+                  );
+                }),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -201,6 +238,11 @@ class _LoopTile extends StatelessWidget {
               'Длительность: ${_formatDuration(loop.durationSec)}',
               style: TextStyle(color: Colors.grey.shade700),
             ),
+            const SizedBox(height: 4),
+            Text(
+              'Режим: ${loop.recordingMode.label}',
+              style: TextStyle(color: Colors.grey.shade700),
+            ),
             const SizedBox(height: 12),
             Wrap(
               spacing: 8,
@@ -239,6 +281,11 @@ class _LoopTile extends StatelessWidget {
                       : null,
                   icon: const Icon(Icons.file_upload),
                   label: const Text('Экспорт'),
+                ),
+                OutlinedButton.icon(
+                  onPressed: isActive ? null : () => _showSettings(context),
+                  icon: const Icon(Icons.settings),
+                  label: const Text('Настройки'),
                 ),
               ],
             ),

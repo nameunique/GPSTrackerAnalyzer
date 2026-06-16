@@ -24,13 +24,16 @@ class RecordingCubit extends Cubit<RecordingState> {
   ActiveSession? _activeSession;
   DateTime? _recordStartedAt;
   int _recordingSamples = 0;
+  bool _isStoppingRecording = false;
+
+  static const int nextSamplesLimit = 100;
 
   Future<void> loadLoops() async {
     try {
       final loops = await _sessionStore.listLoops();
       emit(state.copyWith(loops: loops, clearError: true));
     } catch (e) {
-      emit(state.copyWith(errorMessage: 'Загрузка лупов: $e'));
+      emit(state.copyWith(errorMessage: 'Загрузка треков: $e'));
     }
   }
 
@@ -39,10 +42,24 @@ class RecordingCubit extends Cubit<RecordingState> {
     final now = DateTime.now();
     final loop = RecordedLoop(
       id: now.microsecondsSinceEpoch.toString(),
-      title: 'Луп ${state.loops.length + 1}',
+      title: 'Трек ${state.loops.length + 1}',
       createdAt: now,
     );
     emit(state.copyWith(loops: [loop, ...state.loops], clearError: true));
+  }
+
+  Future<void> updateRecordingMode(
+    String loopId,
+    TrackRecordingMode recordingMode,
+  ) async {
+    final loop = _findLoop(loopId);
+    if (loop == null || state.activeLoopId == loopId) return;
+
+    final updated = loop.copyWith(recordingMode: recordingMode);
+    emit(state.copyWith(loops: _replaceLoop(loopId, updated), clearError: true));
+    if (updated.isSaved) {
+      await _sessionStore.upsertLoop(updated);
+    }
   }
 
   Future<void> startRecording(String loopId) async {
@@ -84,63 +101,73 @@ class RecordingCubit extends Cubit<RecordingState> {
           ),
         ),
       );
+      final activeLoop = _findLoop(loop.id);
+      if (activeLoop?.recordingMode == TrackRecordingMode.next100Samples &&
+          _recordingSamples >= nextSamplesLimit) {
+        unawaited(stopRecording());
+      }
     });
   }
 
   Future<RecordedLoop?> stopRecording() async {
-    if (!state.isRecording) return null;
+    if (!state.isRecording || _isStoppingRecording) return null;
 
-    await _recordSub?.cancel();
-    _recordSub = null;
+    _isStoppingRecording = true;
+    try {
+      await _recordSub?.cancel();
+      _recordSub = null;
 
-    final activeId = state.activeLoopId;
-    final sessionPath = _activeSession?.filePath;
-    _activeSession = null;
+      final activeId = state.activeLoopId;
+      final sessionPath = _activeSession?.filePath;
+      _activeSession = null;
 
-    final savedPath = await _sessionStore.endSession();
-    final path = savedPath ?? sessionPath;
-    final currentLoop = activeId == null ? null : _findLoop(activeId);
-    if (currentLoop == null || path == null) {
+      final savedPath = await _sessionStore.endSession();
+      final path = savedPath ?? sessionPath;
+      final currentLoop = activeId == null ? null : _findLoop(activeId);
+      if (currentLoop == null || path == null) {
+        emit(
+          state.copyWith(
+            isRecording: false,
+            clearError: true,
+            clearActiveLoop: true,
+          ),
+        );
+        return null;
+      }
+
+      final startedAt = _recordStartedAt;
+      _recordStartedAt = null;
+      final duration = startedAt == null
+          ? 0.0
+          : DateTime.now().difference(startedAt).inMilliseconds / 1000;
+      final savedLoop = currentLoop.copyWith(
+        filePath: path,
+        sampleCount: _recordingSamples,
+        durationSec: duration,
+      );
+      await _sessionStore.upsertLoop(savedLoop);
+
       emit(
         state.copyWith(
           isRecording: false,
+          loops: _replaceLoop(savedLoop.id, savedLoop),
           clearError: true,
           clearActiveLoop: true,
         ),
       );
-      return null;
+      return savedLoop;
+    } finally {
+      _isStoppingRecording = false;
     }
-
-    final startedAt = _recordStartedAt;
-    _recordStartedAt = null;
-    final duration = startedAt == null
-        ? 0.0
-        : DateTime.now().difference(startedAt).inMilliseconds / 1000;
-    final savedLoop = currentLoop.copyWith(
-      filePath: path,
-      sampleCount: _recordingSamples,
-      durationSec: duration,
-    );
-    await _sessionStore.upsertLoop(savedLoop);
-
-    emit(
-      state.copyWith(
-        isRecording: false,
-        loops: _replaceLoop(savedLoop.id, savedLoop),
-        clearError: true,
-        clearActiveLoop: true,
-      ),
-    );
-    return savedLoop;
   }
 
   Future<void> exportLoop(RecordedLoop loop) async {
     final exported = await _sessionStore.exportLoop(loop);
     if (exported == null) {
-      emit(state.copyWith(errorMessage: 'Не удалось экспортировать луп'));
+      emit(state.copyWith(errorMessage: 'Не удалось экспортировать трек'));
       return;
     }
-    emit(state.copyWith(errorMessage: 'Луп экспортирован', clearError: false));
+    emit(state.copyWith(errorMessage: 'Трек экспортирован', clearError: false));
   }
 
   RecordedLoop? _findLoop(String id) {

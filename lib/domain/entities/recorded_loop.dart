@@ -1,5 +1,24 @@
 import 'package:equatable/equatable.dart';
 
+enum TrackRecordingMode {
+  manual,
+  next100Samples;
+
+  String get label {
+    return switch (this) {
+      TrackRecordingMode.manual => 'Старт/стоп вручную',
+      TrackRecordingMode.next100Samples => 'Следующие 100 значений',
+    };
+  }
+
+  static TrackRecordingMode fromJson(String? value) {
+    return TrackRecordingMode.values.firstWhere(
+      (mode) => mode.name == value,
+      orElse: () => TrackRecordingMode.manual,
+    );
+  }
+}
+
 class RecordedLoop extends Equatable {
   const RecordedLoop({
     required this.id,
@@ -8,6 +27,7 @@ class RecordedLoop extends Equatable {
     this.filePath,
     this.sampleCount = 0,
     this.durationSec = 0,
+    this.recordingMode = TrackRecordingMode.manual,
   });
 
   final String id;
@@ -16,8 +36,13 @@ class RecordedLoop extends Equatable {
   final String? filePath;
   final int sampleCount;
   final double durationSec;
+  final TrackRecordingMode recordingMode;
 
   bool get isSaved => filePath != null && filePath!.isNotEmpty;
+
+  static String _normalizeTitle(String title) {
+    return title.replaceFirst('Луп', 'Трек').replaceFirst('луп', 'трек');
+  }
 
   RecordedLoop copyWith({
     String? id,
@@ -26,6 +51,7 @@ class RecordedLoop extends Equatable {
     String? filePath,
     int? sampleCount,
     double? durationSec,
+    TrackRecordingMode? recordingMode,
   }) {
     return RecordedLoop(
       id: id ?? this.id,
@@ -34,6 +60,7 @@ class RecordedLoop extends Equatable {
       filePath: filePath ?? this.filePath,
       sampleCount: sampleCount ?? this.sampleCount,
       durationSec: durationSec ?? this.durationSec,
+      recordingMode: recordingMode ?? this.recordingMode,
     );
   }
 
@@ -44,16 +71,18 @@ class RecordedLoop extends Equatable {
     'filePath': filePath,
     'sampleCount': sampleCount,
     'durationSec': durationSec,
+    'recordingMode': recordingMode.name,
   };
 
   factory RecordedLoop.fromJson(Map<String, dynamic> json) {
     return RecordedLoop(
       id: json['id'] as String,
-      title: json['title'] as String,
+      title: _normalizeTitle(json['title'] as String),
       createdAt: DateTime.parse(json['createdAt'] as String),
       filePath: json['filePath'] as String?,
       sampleCount: json['sampleCount'] as int? ?? 0,
       durationSec: (json['durationSec'] as num?)?.toDouble() ?? 0,
+      recordingMode: TrackRecordingMode.fromJson(json['recordingMode'] as String?),
     );
   }
 
@@ -65,5 +94,6 @@ class RecordedLoop extends Equatable {
     filePath,
     sampleCount,
     durationSec,
+    recordingMode,
   ];
 }

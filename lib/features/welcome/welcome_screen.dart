@@ -27,7 +27,7 @@ class WelcomeScreen extends StatelessWidget {
               const SizedBox(height: 16),
               Text(
                 'Подключите GPS-трекер через шторку сверху, затем выберите '
-                'запись лупа или мониторинг датчиков в реальном времени.',
+                'запись трека или мониторинг датчиков в реальном времени.',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: Colors.white.withValues(alpha: 0.9),
@@ -48,7 +48,7 @@ class WelcomeScreen extends StatelessWidget {
                   Navigator.pushNamed(context, GpsTrackerApp.routeRecording);
                 },
                 child: const Text(
-                  'Запись лупа',
+                  'Запись трека',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                 ),
               ),

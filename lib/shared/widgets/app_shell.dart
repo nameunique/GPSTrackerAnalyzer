@@ -24,7 +24,7 @@ class AppShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.scaffoldBlue,
+      backgroundColor: Colors.black,
       appBar: AppBar(
         automaticallyImplyLeading: false,
         title: BlocBuilder<BluetoothCubit, BluetoothState>(
@@ -44,7 +44,7 @@ class AppShell extends StatelessWidget {
           ),
         ],
       ),
-      body: child,
+      body: SafeArea(top: false, child: child),
     );
   }
 
