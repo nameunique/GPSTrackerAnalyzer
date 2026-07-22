@@ -7,12 +7,19 @@ import 'package:gps_tracker_analyzer/domain/repositories/gps_telemetry_repositor
 import 'package:gps_tracker_analyzer/features/bluetooth/bluetooth_state.dart';
 
 class BluetoothCubit extends Cubit<BluetoothState> {
-  BluetoothCubit(this._telemetry) : super(const BluetoothState()) {
+  BluetoothCubit(GpsTelemetryRepository telemetry)
+    : _telemetry = telemetry,
+      super(BluetoothState(connection: telemetry.currentConnectionState)) {
     _devicesSub = _telemetry.discoveredDevices.listen((devices) {
-      emit(state.copyWith(devices: devices));
+      _emitIfOpen(state.copyWith(devices: devices));
     });
     _connSub = _telemetry.connectionState.listen((connection) {
-      emit(state.copyWith(connection: connection, clearError: true));
+      _emitIfOpen(
+        state.copyWith(
+          connection: connection,
+          clearError: connection != GpsTelemetryConnectionState.error,
+        ),
+      );
     });
   }
 
@@ -21,26 +28,36 @@ class BluetoothCubit extends Cubit<BluetoothState> {
   StreamSubscription<List<BleDeviceInfo>>? _devicesSub;
   StreamSubscription<GpsTelemetryConnectionState>? _connSub;
 
+  void _emitIfOpen(BluetoothState next) {
+    if (!isClosed) emit(next);
+  }
+
   Future<void> ensurePermissions() async {
     final ok = await ensureBlePermissions();
-    emit(state.copyWith(permissionsGranted: ok));
+    if (isClosed) return;
+    _emitIfOpen(state.copyWith(permissionsGranted: ok));
     if (!ok) {
-      emit(
+      _emitIfOpen(
         state.copyWith(errorMessage: 'Нужны разрешения Bluetooth и геолокации'),
       );
     }
   }
 
   Future<void> scan() async {
-    emit(state.copyWith(clearError: true));
+    // A new scan is a new result set. Clearing here also prevents a device
+    // from the previous scan being connected while the platform scan starts.
+    _emitIfOpen(
+      state.copyWith(devices: const <BleDeviceInfo>[], clearError: true),
+    );
     if (!state.permissionsGranted) {
       await ensurePermissions();
+      if (isClosed) return;
       if (!state.permissionsGranted) return;
     }
     try {
       await _telemetry.startScan();
     } catch (e) {
-      emit(state.copyWith(errorMessage: 'Сканирование: $e'));
+      _emitIfOpen(state.copyWith(errorMessage: 'Сканирование: $e'));
     }
   }
 
@@ -48,25 +65,54 @@ class BluetoothCubit extends Cubit<BluetoothState> {
     try {
       await _telemetry.stopScan();
     } catch (e) {
-      emit(state.copyWith(errorMessage: 'Остановка сканирования: $e'));
+      _emitIfOpen(state.copyWith(errorMessage: 'Остановка сканирования: $e'));
+    }
+  }
+
+  Future<bool> enableBluetooth() async {
+    _emitIfOpen(state.copyWith(clearError: true));
+    try {
+      await _telemetry.requestEnableBluetooth();
+      return true;
+    } catch (e) {
+      if (!isClosed) {
+        _emitIfOpen(
+          state.copyWith(errorMessage: 'Не удалось включить Bluetooth: $e'),
+        );
+      }
+      return false;
     }
   }
 
   Future<void> connect(String remoteId) async {
-    emit(state.copyWith(clearError: true));
+    _emitIfOpen(state.copyWith(clearError: true));
     try {
       await _telemetry.connect(remoteId);
+      if (isClosed) return;
+      // The repository snapshot is authoritative when its state stream uses
+      // asynchronous delivery. Expose it before this Future completes.
+      _emitIfOpen(
+        state.copyWith(
+          connection: _telemetry.currentConnectionState,
+          clearError: true,
+        ),
+      );
     } catch (e) {
-      emit(state.copyWith(errorMessage: 'Подключение: $e'));
+      _emitIfOpen(
+        state.copyWith(
+          connection: _telemetry.currentConnectionState,
+          errorMessage: 'Подключение: $e',
+        ),
+      );
     }
   }
 
   Future<void> disconnect() async {
-    emit(state.copyWith(clearError: true));
+    _emitIfOpen(state.copyWith(clearError: true));
     try {
       await _telemetry.disconnect();
     } catch (e) {
-      emit(state.copyWith(errorMessage: 'Отключение: $e'));
+      _emitIfOpen(state.copyWith(errorMessage: 'Отключение: $e'));
     }
   }
 

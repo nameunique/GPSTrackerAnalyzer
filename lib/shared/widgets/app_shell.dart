@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:gps_tracker_analyzer/core/theme/app_colors.dart';
 import 'package:gps_tracker_analyzer/domain/entities/ble_device_info.dart';
 import 'package:gps_tracker_analyzer/domain/repositories/gps_telemetry_repository.dart';
 import 'package:gps_tracker_analyzer/features/bluetooth/bluetooth_cubit.dart';
@@ -17,6 +16,7 @@ class AppShell extends StatelessWidget {
       GpsTelemetryConnectionState.scanning => 'Поиск устройств',
       GpsTelemetryConnectionState.connecting => 'Подключение',
       GpsTelemetryConnectionState.connected => 'Подключено',
+      GpsTelemetryConnectionState.bluetoothOff => 'Bluetooth выключен',
       GpsTelemetryConnectionState.error => 'Ошибка Bluetooth',
     };
   }
@@ -71,6 +71,7 @@ class _BluetoothSheet extends StatelessWidget {
       GpsTelemetryConnectionState.scanning => 'Поиск устройств...',
       GpsTelemetryConnectionState.connecting => 'Подключение...',
       GpsTelemetryConnectionState.connected => 'Подключено',
+      GpsTelemetryConnectionState.bluetoothOff => 'Bluetooth выключен',
       GpsTelemetryConnectionState.error => 'Ошибка Bluetooth',
     };
   }

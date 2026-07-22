@@ -32,6 +32,7 @@ class _RecordingView extends StatelessWidget {
       GpsTelemetryConnectionState.scanning => 'Поиск устройств…',
       GpsTelemetryConnectionState.connecting => 'Подключение…',
       GpsTelemetryConnectionState.connected => 'Подключено',
+      GpsTelemetryConnectionState.bluetoothOff => 'Bluetooth выключен',
       GpsTelemetryConnectionState.error => 'Ошибка Bluetooth',
     };
   }
@@ -169,16 +170,20 @@ class _LoopTile extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 ...TrackRecordingMode.values.map((mode) {
-                  return RadioListTile<TrackRecordingMode>(
+                  final selected = mode == loop.recordingMode;
+                  return ListTile(
                     contentPadding: EdgeInsets.zero,
                     title: Text(mode.label),
-                    value: mode,
-                    groupValue: loop.recordingMode,
-                    onChanged: (value) {
-                      if (value == null) return;
+                    leading: Icon(
+                      selected
+                          ? Icons.radio_button_checked_rounded
+                          : Icons.radio_button_off_rounded,
+                    ),
+                    selected: selected,
+                    onTap: () {
                       context.read<RecordingCubit>().updateRecordingMode(
                         loop.id,
-                        value,
+                        mode,
                       );
                       Navigator.pop(sheetContext);
                     },

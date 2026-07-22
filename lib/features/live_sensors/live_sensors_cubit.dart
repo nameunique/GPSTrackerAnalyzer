@@ -6,15 +6,18 @@ import 'package:gps_tracker_analyzer/domain/repositories/gps_telemetry_repositor
 import 'package:gps_tracker_analyzer/features/live_sensors/live_sensors_state.dart';
 
 class LiveSensorsCubit extends Cubit<LiveSensorsState> {
-  LiveSensorsCubit(this._telemetry) : super(const LiveSensorsState()) {
+  LiveSensorsCubit(this._telemetry)
+    : super(LiveSensorsState(connection: _telemetry.currentConnectionState)) {
     _connSub = _telemetry.connectionState.listen((connection) {
       emit(state.copyWith(connection: connection));
     });
     _samplesSub = _telemetry.samples.listen((sample) {
-      emit(state.copyWith(
-        latestSample: sample,
-        totalUpdates: state.totalUpdates + 1,
-      ));
+      emit(
+        state.copyWith(
+          latestSample: sample,
+          totalUpdates: state.totalUpdates + 1,
+        ),
+      );
     });
   }
 

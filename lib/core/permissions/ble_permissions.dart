@@ -10,11 +10,16 @@ Future<bool> ensureBlePermissions() async {
   final bluetoothScan = await Permission.bluetoothScan.request();
   final bluetoothConnect = await Permission.bluetoothConnect.request();
   if (!bluetoothScan.isGranted || !bluetoothConnect.isGranted) {
+    if (bluetoothScan.isPermanentlyDenied ||
+        bluetoothConnect.isPermanentlyDenied) {
+      await openAppSettings();
+    }
     return false;
   }
 
   final location = await Permission.locationWhenInUse.request();
   if (!location.isGranted) {
+    if (location.isPermanentlyDenied) await openAppSettings();
     return false;
   }
 

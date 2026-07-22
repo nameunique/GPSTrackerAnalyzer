@@ -40,12 +40,18 @@ class FileSessionStore implements SessionStore {
 
   @override
   Future<String?> endSession() async {
-    await _sink?.flush();
-    await _sink?.close();
-    _sink = null;
-
+    final sink = _sink;
     final srcPath = _activeFilePath;
+    _sink = null;
     _activeFilePath = null;
+
+    if (sink != null) {
+      try {
+        await sink.flush();
+      } finally {
+        await sink.close();
+      }
+    }
     return srcPath;
   }
 

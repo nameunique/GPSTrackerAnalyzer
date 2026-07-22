@@ -19,7 +19,7 @@
         android:maxSdkVersion="28" />
 
     <application
-        android:label="gps_tracker_analyzer"
+        android:label="GPS Tracker Analyzer"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

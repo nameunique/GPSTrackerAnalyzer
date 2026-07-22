@@ -28,6 +28,7 @@ class _LiveSensorsView extends StatelessWidget {
       GpsTelemetryConnectionState.scanning => 'Поиск устройств…',
       GpsTelemetryConnectionState.connecting => 'Подключение…',
       GpsTelemetryConnectionState.connected => 'Подключено',
+      GpsTelemetryConnectionState.bluetoothOff => 'Bluetooth выключен',
       GpsTelemetryConnectionState.error => 'Ошибка Bluetooth',
     };
   }
