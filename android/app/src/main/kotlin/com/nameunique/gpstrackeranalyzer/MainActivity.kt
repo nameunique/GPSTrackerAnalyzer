@@ -1,4 +1,4 @@
-package com.example.gps_tracker_analyzer
+package com.nameunique.gpstrackeranalyzer
 
 import android.content.Intent
 import io.flutter.embedding.android.FlutterActivity
@@ -47,7 +47,7 @@ class MainActivity : FlutterActivity() {
     }
 
     private companion object {
-        const val RESULT_SHARER_CHANNEL = "com.example.gps_tracker_analyzer/result_sharer"
+        const val RESULT_SHARER_CHANNEL = "com.nameunique.gpstrackeranalyzer/result_sharer"
         const val SHARE_TEXT_METHOD = "shareText"
     }
 }
