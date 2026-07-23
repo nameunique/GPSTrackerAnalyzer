@@ -19,7 +19,7 @@
         android:maxSdkVersion="28" />
 
     <application
-        android:label="looprunner"
+        android:label="LoopRunner"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
