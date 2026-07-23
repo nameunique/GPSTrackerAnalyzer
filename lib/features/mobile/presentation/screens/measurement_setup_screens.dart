@@ -159,12 +159,14 @@ class M06BPreflightWeakGpsScreen extends StatelessWidget {
     this.recordLimitLabel = '200 записей',
     this.accuracyLabel = '±18 м',
     this.onBack,
+    this.onStart,
     this.onRetry,
   });
 
   final String recordLimitLabel;
   final String accuracyLabel;
   final VoidCallback? onBack;
+  final VoidCallback? onStart;
   final VoidCallback? onRetry;
 
   @override
@@ -174,7 +176,7 @@ class M06BPreflightWeakGpsScreen extends StatelessWidget {
       accuracyLabel: accuracyLabel,
       recordLimitLabel: recordLimitLabel,
       onBack: onBack,
-      onPrimary: null,
+      onPrimary: onStart,
       onSecondary: onRetry,
     );
   }
@@ -204,10 +206,7 @@ class _PreflightScreenBody extends StatelessWidget {
       bottom: Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          MobileActionButton(
-            label: gpsReady ? 'Начать замер' : 'Ждём точный GPS…',
-            onPressed: onPrimary,
-          ),
+          MobileActionButton(label: 'Начать замер', onPressed: onPrimary),
           const SizedBox(height: 8),
           MobileActionButton(
             label: gpsReady ? 'Изменить количество' : 'Повторить проверку',

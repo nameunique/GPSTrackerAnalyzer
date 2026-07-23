@@ -290,17 +290,15 @@ class _MobileFlowScreenState extends State<MobileFlowScreen> {
     final operation = ++_connectOperation;
     final returnToPreflight =
         _connectionLostBeforeStart && _pendingLoopId != null;
+    final candidateDeviceName = device.name?.trim().isNotEmpty == true
+        ? device.name!.trim()
+        : 'GPS Tracker';
     _scanTimeoutTimer?.cancel();
     _searchSession++;
     setState(() {
       _connecting = true;
       _searchActive = false;
       _scanHasStarted = false;
-      _lastDeviceId = device.remoteId;
-      _lastDeviceRssi = device.rssi;
-      _lastDeviceName = device.name?.trim().isNotEmpty == true
-          ? device.name!.trim()
-          : 'GPS Tracker';
     });
     await context.read<BluetoothCubit>().connect(device.remoteId);
     if (!mounted) return;
@@ -331,9 +329,18 @@ class _MobileFlowScreenState extends State<MobileFlowScreen> {
       }
       return;
     }
-    setState(() => _connecting = false);
-    if (context.read<BluetoothCubit>().state.connection ==
-        GpsTelemetryConnectionState.connected) {
+    final connected =
+        context.read<BluetoothCubit>().state.connection ==
+        GpsTelemetryConnectionState.connected;
+    setState(() {
+      _connecting = false;
+      if (connected) {
+        _lastDeviceId = device.remoteId;
+        _lastDeviceRssi = device.rssi;
+        _lastDeviceName = candidateDeviceName;
+      }
+    });
+    if (connected) {
       final recording = context.read<RecordingCubit>().state;
       if (returnToPreflight && !recording.isRecording) {
         _connectionLostBeforeStart = false;
@@ -377,6 +384,11 @@ class _MobileFlowScreenState extends State<MobileFlowScreen> {
   }
 
   Future<void> _findAnotherDevice() async {
+    if (_connecting || _connectionCleanupPending) return;
+    if (context.read<RecordingCubit>().state.isRecording) {
+      _showMessage('Сначала завершите текущий замер');
+      return;
+    }
     if (context.read<BluetoothCubit>().state.connection ==
         GpsTelemetryConnectionState.connected) {
       await context.read<BluetoothCubit>().disconnect();
@@ -797,7 +809,7 @@ class _MobileFlowScreenState extends State<MobileFlowScreen> {
           children: [
             ListTile(
               leading: const Icon(Icons.bluetooth_searching_rounded),
-              title: const Text('Найти другое устройство'),
+              title: const Text('Сменить устройство'),
               onTap: () {
                 Navigator.pop(sheetContext);
                 unawaited(_findAnotherDevice());
@@ -1309,6 +1321,7 @@ class _MobileFlowScreenState extends State<MobileFlowScreen> {
               : _latestSample == null
               ? 'нет данных'
               : _dateLabel(_latestSample!.receivedAt),
+          onChangeDevice: () => unawaited(_findAnotherDevice()),
           onDisconnect: () => unawaited(_disconnect()),
           onMore: _showMoreMenu,
           onTabSelected: _selectTab,
@@ -1365,6 +1378,7 @@ class _MobileFlowScreenState extends State<MobileFlowScreen> {
                       ? _FlowStage.addMeasurement
                       : _FlowStage.limit,
                 ),
+                onStart: () => unawaited(_startRecording()),
                 onRetry: () => setState(() {}),
               ),
       _FlowStage.recording =>

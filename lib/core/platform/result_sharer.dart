@@ -27,7 +27,7 @@ final class ResultSharer {
   }) : _nativeShareInvoker = nativeShareInvoker ?? _invokeNativeShare,
        _clipboardWriter = clipboardWriter ?? _writeToClipboard;
 
-  static const channelName = 'com.nameunique.gpstrackeranalyzer/result_sharer';
+  static const channelName = 'com.nameunique.looprunner/result_sharer';
   static const methodName = 'shareText';
   static const _channel = MethodChannel(channelName);
 

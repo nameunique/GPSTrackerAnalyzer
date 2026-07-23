@@ -744,6 +744,7 @@ class M16DeviceScreen extends StatelessWidget {
     this.gpsReady = true,
     this.dataActive = true,
     this.lastSyncLabel = 'сейчас',
+    this.onChangeDevice,
     this.onDisconnect,
     this.onMore,
     this.onTabSelected,
@@ -755,6 +756,7 @@ class M16DeviceScreen extends StatelessWidget {
   final bool gpsReady;
   final bool dataActive;
   final String lastSyncLabel;
+  final VoidCallback? onChangeDevice;
   final VoidCallback? onDisconnect;
   final VoidCallback? onMore;
   final ValueChanged<MobileTab>? onTabSelected;
@@ -835,10 +837,19 @@ class M16DeviceScreen extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           MobileActionButton(
-            label: 'Отключить трекер',
-            onPressed: onDisconnect,
-            style: MobileButtonStyle.secondary,
+            key: const ValueKey('device-change'),
+            label: connected ? 'Сменить устройство' : 'Найти устройство',
+            onPressed: onChangeDevice,
           ),
+          if (connected) ...<Widget>[
+            const SizedBox(height: 12),
+            MobileActionButton(
+              key: const ValueKey('device-disconnect'),
+              label: 'Отключить трекер',
+              onPressed: onDisconnect,
+              style: MobileButtonStyle.secondary,
+            ),
+          ],
         ],
       ),
     );
