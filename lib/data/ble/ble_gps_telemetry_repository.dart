@@ -12,11 +12,19 @@ class BleGpsTelemetryRepository implements GpsTelemetryRepository {
   BleGpsTelemetryRepository({
     required GpsPacketParser parser,
     required Logger logger,
-  })  : _parser = parser,
-        _logger = logger {
+  }) : _parser = parser,
+       _logger = logger {
     _adapterSub = FlutterBluePlus.adapterState.listen((state) {
       if (state == BluetoothAdapterState.off) {
-        _emitState(GpsTelemetryConnectionState.error);
+        _adapterIsOff = true;
+        unawaited(_handleAdapterOff());
+      } else if (state == BluetoothAdapterState.on) {
+        _adapterIsOff = false;
+        if (_connectedDevice == null &&
+            (_lastState == GpsTelemetryConnectionState.bluetoothOff ||
+                _lastState == GpsTelemetryConnectionState.error)) {
+          _emitState(GpsTelemetryConnectionState.idle);
+        }
       }
     });
     _isScanningSub = FlutterBluePlus.isScanning.listen((scanning) {
@@ -36,10 +44,22 @@ class BleGpsTelemetryRepository implements GpsTelemetryRepository {
       StreamController<GpsTelemetryConnectionState>.broadcast();
   final _discovered = StreamController<List<BleDeviceInfo>>.broadcast();
 
+  late final Stream<GpsTelemetryConnectionState> _replayingConnectionState =
+      Stream<GpsTelemetryConnectionState>.multi((controller) {
+        controller.addSync(_lastState);
+        final subscription = _connectionState.stream.listen(
+          controller.addSync,
+          onError: controller.addErrorSync,
+          onDone: controller.closeSync,
+        );
+        controller.onCancel = subscription.cancel;
+      }, isBroadcast: true);
+
   final Map<String, BleDeviceInfo> _deviceMap = {};
 
   StreamSubscription<List<ScanResult>>? _scanSubscription;
   StreamSubscription<List<int>>? _notifySubscription;
+  StreamSubscription<BluetoothConnectionState>? _deviceConnectionSub;
   StreamSubscription<BluetoothAdapterState>? _adapterSub;
   StreamSubscription<bool>? _isScanningSub;
 
@@ -47,7 +67,11 @@ class BleGpsTelemetryRepository implements GpsTelemetryRepository {
 
   GpsTelemetryConnectionState _lastState = GpsTelemetryConnectionState.idle;
 
+  bool _handlingDisconnect = false;
+  bool _adapterIsOff = false;
+
   void _emitState(GpsTelemetryConnectionState state) {
+    if (_lastState == state) return;
     _lastState = state;
     if (!_connectionState.isClosed) {
       _connectionState.add(state);
@@ -66,8 +90,11 @@ class BleGpsTelemetryRepository implements GpsTelemetryRepository {
   Stream<GpsSample> get samples => _samples.stream;
 
   @override
+  GpsTelemetryConnectionState get currentConnectionState => _lastState;
+
+  @override
   Stream<GpsTelemetryConnectionState> get connectionState =>
-      _connectionState.stream;
+      _replayingConnectionState;
 
   @override
   Stream<List<BleDeviceInfo>> get discoveredDevices => _discovered.stream;
@@ -75,6 +102,9 @@ class BleGpsTelemetryRepository implements GpsTelemetryRepository {
   Guid get _serviceGuid => Guid(BleGattConfig.serviceUuid);
 
   Guid get _mainCharGuid => Guid(BleGattConfig.mainNotifyCharacteristicUuid);
+
+  @override
+  Future<void> requestEnableBluetooth() => FlutterBluePlus.turnOn();
 
   @override
   Future<void> startScan({
@@ -86,7 +116,7 @@ class BleGpsTelemetryRepository implements GpsTelemetryRepository {
     }
 
     if (FlutterBluePlus.adapterStateNow == BluetoothAdapterState.off) {
-      _emitState(GpsTelemetryConnectionState.error);
+      _emitState(GpsTelemetryConnectionState.bluetoothOff);
       throw StateError('Bluetooth adapter is off');
     }
 
@@ -106,7 +136,7 @@ class BleGpsTelemetryRepository implements GpsTelemetryRepository {
         final name = r.device.platformName.isNotEmpty
             ? r.device.platformName
             : (r.device.advName.isNotEmpty ? r.device.advName : null);
-        _deviceMap[id] = BleDeviceInfo(remoteId: id, name: name);
+        _deviceMap[id] = BleDeviceInfo(remoteId: id, name: name, rssi: r.rssi);
       }
       _emitDevices();
     });
@@ -135,6 +165,9 @@ class BleGpsTelemetryRepository implements GpsTelemetryRepository {
   @override
   Future<void> connect(String remoteId) async {
     await stopScan();
+    if (_connectedDevice != null) {
+      await _disconnectCurrentDevice(emitIdle: false);
+    }
     _emitState(GpsTelemetryConnectionState.connecting);
 
     final device = BluetoothDevice.fromId(remoteId);
@@ -157,6 +190,13 @@ class BleGpsTelemetryRepository implements GpsTelemetryRepository {
       await device.connectionState
           .where((s) => s == BluetoothConnectionState.connected)
           .first;
+
+      await _deviceConnectionSub?.cancel();
+      _deviceConnectionSub = device.connectionState.listen((state) {
+        if (state == BluetoothConnectionState.disconnected) {
+          unawaited(_handleRemoteDisconnect(device));
+        }
+      });
 
       // Many BLE stacks behave better when MTU is negotiated early.
       try {
@@ -191,9 +231,16 @@ class BleGpsTelemetryRepository implements GpsTelemetryRepository {
       _emitState(GpsTelemetryConnectionState.connected);
     } catch (e, st) {
       _logger.e('BLE connect failed', error: e, stackTrace: st);
-      _connectedDevice = null;
+      await _deviceConnectionSub?.cancel();
+      _deviceConnectionSub = null;
       await _notifySubscription?.cancel();
       _notifySubscription = null;
+      try {
+        await device.disconnect();
+      } catch (_) {
+        // The original connection error is more useful to the caller.
+      }
+      _connectedDevice = null;
       _emitState(GpsTelemetryConnectionState.error);
       rethrow;
     }
@@ -219,18 +266,69 @@ class BleGpsTelemetryRepository implements GpsTelemetryRepository {
 
   @override
   Future<void> disconnect() async {
-    await _notifySubscription?.cancel();
+    await _disconnectCurrentDevice(emitIdle: true);
+  }
+
+  Future<void> _disconnectCurrentDevice({required bool emitIdle}) async {
+    if (_handlingDisconnect) return;
+    _handlingDisconnect = true;
+
+    final device = _connectedDevice;
+    _connectedDevice = null;
+    final notifySubscription = _notifySubscription;
     _notifySubscription = null;
+    final connectionSub = _deviceConnectionSub;
+    _deviceConnectionSub = null;
+
+    await notifySubscription?.cancel();
+    await connectionSub?.cancel();
+
     try {
-      if (_connectedDevice != null) {
-        await _connectedDevice!.disconnect();
+      if (device != null) {
+        await device.disconnect();
       }
     } catch (e, st) {
       _logger.w('BLE disconnect', error: e, stackTrace: st);
     } finally {
-      _connectedDevice = null;
-      _emitState(GpsTelemetryConnectionState.idle);
+      _handlingDisconnect = false;
+      if (emitIdle && !_adapterIsOff) {
+        _emitState(GpsTelemetryConnectionState.idle);
+      }
     }
+  }
+
+  Future<void> _handleRemoteDisconnect(BluetoothDevice device) async {
+    if (_handlingDisconnect || _connectedDevice?.remoteId != device.remoteId) {
+      return;
+    }
+
+    _handlingDisconnect = true;
+    _connectedDevice = null;
+    final notifySubscription = _notifySubscription;
+    _notifySubscription = null;
+    final connectionSub = _deviceConnectionSub;
+    _deviceConnectionSub = null;
+    try {
+      await notifySubscription?.cancel();
+      await connectionSub?.cancel();
+      _emitState(
+        _adapterIsOff
+            ? GpsTelemetryConnectionState.bluetoothOff
+            : GpsTelemetryConnectionState.idle,
+      );
+    } finally {
+      _handlingDisconnect = false;
+    }
+  }
+
+  Future<void> _handleAdapterOff() async {
+    if (_handlingDisconnect) {
+      _emitState(GpsTelemetryConnectionState.bluetoothOff);
+      return;
+    }
+
+    await _disconnectCurrentDevice(emitIdle: false);
+    _emitState(GpsTelemetryConnectionState.bluetoothOff);
   }
 
   Future<void> dispose() async {

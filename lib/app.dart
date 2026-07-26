@@ -1,13 +1,29 @@
 import 'package:flutter/material.dart';
-import 'package:gps_tracker_analyzer/core/theme/app_colors.dart';
-import 'package:gps_tracker_analyzer/features/live_sensors/live_sensors_screen.dart';
-import 'package:gps_tracker_analyzer/features/performance_report/performance_report_screen.dart';
-import 'package:gps_tracker_analyzer/features/recording/recording_screen.dart';
-import 'package:gps_tracker_analyzer/features/welcome/welcome_screen.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:gps_tracker_analyzer/core/di/injection.dart';
+import 'package:gps_tracker_analyzer/core/theme/theme.dart';
+import 'package:gps_tracker_analyzer/domain/repositories/gps_telemetry_repository.dart';
+import 'package:gps_tracker_analyzer/domain/repositories/session_store.dart';
+import 'package:gps_tracker_analyzer/domain/services/run_analytics.dart';
+import 'package:gps_tracker_analyzer/features/bluetooth/bluetooth_cubit.dart';
+import 'package:gps_tracker_analyzer/features/mobile/mobile_flow_screen.dart';
+import 'package:gps_tracker_analyzer/features/recording/recording_cubit.dart';
 
 class GpsTrackerApp extends StatelessWidget {
-  const GpsTrackerApp({super.key});
+  const GpsTrackerApp({
+    super.key,
+    this.telemetryRepository,
+    this.sessionStore,
+    this.analytics,
+  });
 
+  /// Optional overrides keep the production app wired through GetIt while
+  /// allowing deterministic widget and device-flow tests with in-memory fakes.
+  final GpsTelemetryRepository? telemetryRepository;
+  final SessionStore? sessionStore;
+  final RunAnalytics? analytics;
+
+  // Kept while the legacy prototype screens remain in the source tree.
   static const String routeWelcome = '/';
   static const String routeRecording = '/recording';
   static const String routeReport = '/report';
@@ -15,44 +31,27 @@ class GpsTrackerApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'GPS Tracker Analyzer',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: AppColors.primaryBlue,
-          brightness: Brightness.light,
+    final telemetry = telemetryRepository ?? sl<GpsTelemetryRepository>();
+    final store = sessionStore ?? sl<SessionStore>();
+    final runAnalytics = analytics ?? sl<RunAnalytics>();
+
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (_) => BluetoothCubit(telemetry)),
+        BlocProvider(
+          create: (_) => RecordingCubit(telemetry, store)..loadLoops(),
         ),
-        useMaterial3: true,
-        scaffoldBackgroundColor: AppColors.scaffoldBlue,
-        appBarTheme: const AppBarTheme(
-          backgroundColor: AppColors.scaffoldBlue,
-          foregroundColor: Colors.white,
-          elevation: 0,
+      ],
+      child: MaterialApp(
+        title: 'GPS Tracker Analyzer',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.dark,
+        home: MobileFlowScreen(
+          telemetryRepository: telemetry,
+          sessionStore: store,
+          analytics: runAnalytics,
         ),
       ),
-      initialRoute: routeWelcome,
-      routes: {
-        routeWelcome: (_) => const WelcomeScreen(),
-        routeRecording: (_) => const RecordingScreen(),
-        routeLiveSensors: (_) => const LiveSensorsScreen(),
-      },
-      onGenerateRoute: (settings) {
-        if (settings.name == routeReport) {
-          final path = settings.arguments as String?;
-          if (path == null || path.isEmpty) {
-            return MaterialPageRoute<void>(
-              builder: (_) => const Scaffold(
-                body: Center(child: Text('Нет пути к сессии')),
-              ),
-            );
-          }
-          return MaterialPageRoute<void>(
-            builder: (_) => PerformanceReportScreen(sessionFilePath: path),
-          );
-        }
-        return null;
-      },
     );
   }
 }

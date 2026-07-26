@@ -17,22 +17,22 @@ class WelcomeScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Добро пожаловать',
+                'Главный экран',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                    ),
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               const SizedBox(height: 16),
               Text(
-                'Подключитесь к GPS-трекеру по Bluetooth, запишите прогон и '
-                'откройте отчёт с графиком и интервалами разгона.',
+                'Подключите GPS-трекер через шторку сверху, затем выберите '
+                'запись трека или мониторинг датчиков в реальном времени.',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.9),
-                      height: 1.35,
-                    ),
+                  color: Colors.white.withValues(alpha: 0.9),
+                  height: 1.35,
+                ),
               ),
               const SizedBox(height: 40),
               FilledButton(
@@ -48,7 +48,7 @@ class WelcomeScreen extends StatelessWidget {
                   Navigator.pushNamed(context, GpsTrackerApp.routeRecording);
                 },
                 child: const Text(
-                  'Начать работу',
+                  'Запись трека',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                 ),
               ),

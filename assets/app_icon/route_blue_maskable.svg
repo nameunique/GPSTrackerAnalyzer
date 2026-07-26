@@ -1,0 +1,28 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Android Adaptive / Composite / 1024" clip-path="url(#clip0_0_4)">
+<rect width="1024" height="1024" fill="url(#paint0_linear_0_4)"/>
+<g id="Pure blue glow" filter="url(#filter0_f_0_4)">
+<circle cx="296.96" cy="256" r="419.84" fill="#67D4FF" fill-opacity="0.13"/>
+</g>
+<g id="Route Glyph / Adaptive Composite / Safe Zone">
+<path id="Vector" d="M306.936 717.064C297.795 707.923 292.659 695.526 292.659 682.598C292.659 669.671 297.795 657.273 306.936 648.132C316.077 638.991 328.474 633.856 341.402 633.856C354.329 633.856 366.727 638.991 375.868 648.132C385.009 657.273 390.144 669.671 390.144 682.598C390.144 695.526 385.009 707.923 375.868 717.064C366.727 726.205 354.329 731.341 341.402 731.341C328.474 731.341 316.077 726.205 306.936 717.064Z" stroke="#55C8FF" stroke-width="31.08" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_2" d="M717.064 375.868C707.923 385.009 695.526 390.144 682.598 390.144C669.671 390.144 657.273 385.009 648.132 375.868C638.991 366.727 633.856 354.329 633.856 341.402C633.856 328.474 638.991 316.076 648.132 306.936C657.273 297.795 669.671 292.659 682.598 292.659C695.526 292.659 707.923 297.795 717.064 306.936C726.205 316.076 731.341 328.474 731.341 341.402C731.341 354.329 726.205 366.727 717.064 375.868Z" stroke="#55C8FF" stroke-width="31.08" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_3" d="M487.629 682.598H621.671C644.293 682.598 665.99 673.612 681.986 657.615C697.983 641.618 706.97 619.922 706.97 597.299C706.97 574.676 697.983 552.98 681.986 536.984C665.99 520.987 644.293 512 621.671 512H426.701C404.078 512 382.382 503.013 366.385 487.016C350.389 471.02 341.402 449.324 341.402 426.701C341.402 404.078 350.389 382.382 366.385 366.385C382.382 350.388 404.078 341.402 426.701 341.402H536.371" stroke="#55C8FF" stroke-width="31.08" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</g>
+<defs>
+<filter id="filter0_f_0_4" x="-266.24" y="-307.2" width="1126.4" height="1126.4" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feGaussianBlur stdDeviation="71.68" result="effect1_foregroundBlur_0_4"/>
+</filter>
+<linearGradient id="paint0_linear_0_4" x1="6.56412" y1="203.487" x2="991.18" y2="859.897" gradientUnits="userSpaceOnUse">
+<stop stop-color="#2F6BFF"/>
+<stop offset="0.52" stop-color="#174A95"/>
+<stop offset="1" stop-color="#071A38"/>
+</linearGradient>
+<clipPath id="clip0_0_4">
+<rect width="1024" height="1024" fill="white"/>
+</clipPath>
+</defs>
+</svg>

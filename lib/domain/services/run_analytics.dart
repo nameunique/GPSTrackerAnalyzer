@@ -5,6 +5,7 @@ import 'package:gps_tracker_analyzer/domain/entities/gps_sample.dart';
 import 'package:gps_tracker_analyzer/domain/entities/performance_report_data.dart';
 
 const double _g = 9.80665;
+const double _standingStartMaxKmh = 1;
 
 class RunAnalytics {
   PerformanceReportData compute(List<GpsSample> rawSamples) {
@@ -33,8 +34,11 @@ class RunAnalytics {
     final distanceM = _integrateDistanceM(samples, timesSec);
     final splitTargets = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
     final splitTimesSec = <int, double?>{};
+    final hasStandingStart = samples.first.speedKmh <= _standingStartMaxKmh;
     for (final kmh in splitTargets) {
-      splitTimesSec[kmh] = _timeToReachSpeedKmh(samples, timesSec, kmh.toDouble());
+      splitTimesSec[kmh] = hasStandingStart
+          ? _timeToReachSpeedKmh(samples, timesSec, kmh.toDouble())
+          : null;
     }
 
     final rawAccelG = _rawAccelerationG(samples, timesSec);
@@ -58,10 +62,9 @@ class RunAnalytics {
     final maxAlt = alts.reduce(max);
     final altitudeRangeM = maxAlt - minAlt;
 
-    final maxAbsAccelG = smoothedAccelG.map((a) => a.abs()).fold<double>(
-          0.1,
-          (p, e) => max(p, e),
-        );
+    final maxAbsAccelG = smoothedAccelG
+        .map((a) => a.abs())
+        .fold<double>(0.1, (p, e) => max(p, e));
 
     final horizontalM = _haversineM(
       samples.first.latitudeDeg,
@@ -70,7 +73,8 @@ class RunAnalytics {
       samples.last.longitudeDeg,
     );
     final slopePercent = horizontalM > 1
-        ? ((samples.last.altitudeM - samples.first.altitudeM) / horizontalM) * 100
+        ? ((samples.last.altitudeM - samples.first.altitudeM) / horizontalM) *
+              100
         : 0.0;
 
     final validCount = samples
@@ -80,7 +84,8 @@ class RunAnalytics {
               s.numSv >= ValidationConfig.minSatellitesForValid,
         )
         .length;
-    final isValid = samples.isNotEmpty &&
+    final isValid =
+        samples.isNotEmpty &&
         validCount / samples.length >= ValidationConfig.minValidSampleRatio;
 
     return PerformanceReportData(
@@ -182,7 +187,8 @@ class RunAnalytics {
     final lat2 = lat2Deg * pi / 180;
     final dLat = (lat2Deg - lat1Deg) * pi / 180;
     final dLon = (lon2Deg - lon1Deg) * pi / 180;
-    final a = sin(dLat / 2) * sin(dLat / 2) +
+    final a =
+        sin(dLat / 2) * sin(dLat / 2) +
         cos(lat1) * cos(lat2) * sin(dLon / 2) * sin(dLon / 2);
     final c = 2 * atan2(sqrt(a), sqrt(1 - a));
     return earthRadiusM * c;
