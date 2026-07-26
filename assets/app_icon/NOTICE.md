@@ -1,5 +1,20 @@
 # Route Blue app icon
 
+The canonical Android launcher handoff is the Figma frame `270:14` in
+`GPSTrackerAnalyzer`:
+https://www.figma.com/design/TVMMqldAOp7VwRf1qTyGBE/GPSTrackerAnalyzer?node-id=270-14
+
+Production source nodes:
+
+- legacy composite: `270:15`
+- adaptive background: `270:21`
+- adaptive foreground: `270:27`
+- themed monochrome foreground: `270:32`
+- adaptive maskable composite: `273:14`
+
+The adaptive glyph is centered inside the `66 / 108` safe zone. Android legacy
+fallback PNGs are generated at 48, 72, 96, 144, and 192 px.
+
 The route glyph is adapted from `route.svg` in Tabler Icons:
 https://github.com/tabler/tabler-icons
 

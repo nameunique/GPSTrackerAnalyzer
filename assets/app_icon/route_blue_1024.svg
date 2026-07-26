@@ -1,27 +1,31 @@
-<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <g clip-path="url(#icon-clip)">
-    <rect width="1024" height="1024" rx="224" fill="url(#icon-gradient)"/>
-    <g transform="translate(-92 -51)" filter="url(#blue-glow)">
-      <circle cx="388.96" cy="307" r="419.84" fill="#67D4FF" fill-opacity="0.13"/>
-    </g>
-    <g transform="translate(-92 -51)" stroke="#55C8FF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M359.876 807.124C348.994 796.242 342.88 781.483 342.88 766.093C342.88 750.704 348.994 735.944 359.876 725.062C370.758 714.18 385.517 708.067 400.907 708.067C416.296 708.067 431.056 714.18 441.938 725.062C452.82 735.944 458.933 750.704 458.933 766.093C458.933 781.483 452.82 796.242 441.938 807.124C431.056 818.006 416.296 824.12 400.907 824.12C385.517 824.12 370.758 818.006 359.876 807.124Z"/>
-      <path d="M848.124 400.938C837.242 411.82 822.483 417.933 807.093 417.933C791.704 417.933 776.944 411.82 766.062 400.938C755.18 390.056 749.067 375.296 749.067 359.907C749.067 344.517 755.18 329.758 766.062 318.876C776.944 307.994 791.704 301.88 807.093 301.88C822.483 301.88 837.242 307.994 848.124 318.876C859.006 329.758 865.12 344.517 865.12 359.907C865.12 375.296 859.006 390.056 848.124 400.938Z"/>
-      <path d="M574.987 766.093H734.56C761.492 766.093 787.321 755.395 806.364 736.351C825.408 717.307 836.107 691.479 836.107 664.547C836.107 637.615 825.408 611.786 806.364 592.742C787.321 573.699 761.492 563 734.56 563H502.453C475.521 563 449.693 552.301 430.649 533.258C411.605 514.214 400.907 488.385 400.907 461.453C400.907 434.521 411.605 408.693 430.649 389.649C449.693 370.605 475.521 359.907 502.453 359.907H633.013"/>
-    </g>
-  </g>
-  <rect x="2" y="2" width="1020" height="1020" rx="222" stroke="#4183FF" stroke-opacity="0.55" stroke-width="4"/>
-  <defs>
-    <filter id="blue-glow" x="-174.24" y="-256.2" width="1126.4" height="1126.4" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
-      <feGaussianBlur stdDeviation="71.68"/>
-    </filter>
-    <linearGradient id="icon-gradient" x1="6.5641" y1="203.487" x2="991.18" y2="859.897" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#2F6BFF"/>
-      <stop offset="0.52" stop-color="#174A95"/>
-      <stop offset="1" stop-color="#071A38"/>
-    </linearGradient>
-    <clipPath id="icon-clip">
-      <rect width="1024" height="1024" rx="224"/>
-    </clipPath>
-  </defs>
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Android Legacy / Composite / 1024">
+<g clip-path="url(#clip0_0_4)">
+<rect width="1024" height="1024" rx="224" fill="url(#paint0_linear_0_4)"/>
+<g id="Pure blue glow" filter="url(#filter0_f_0_4)">
+<circle cx="296.96" cy="256" r="419.84" fill="#67D4FF" fill-opacity="0.13"/>
+</g>
+<g id="Tabler / route / 1024">
+<path id="Vector" d="M267.876 756.124C256.994 745.242 250.88 730.483 250.88 715.093C250.88 699.704 256.994 684.944 267.876 674.062C278.758 663.18 293.517 657.067 308.907 657.067C324.296 657.067 339.056 663.18 349.938 674.062C360.82 684.944 366.933 699.704 366.933 715.093C366.933 730.483 360.82 745.242 349.938 756.124C339.056 767.006 324.296 773.12 308.907 773.12C293.517 773.12 278.758 767.006 267.876 756.124Z" stroke="#55C8FF" stroke-width="37" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_2" d="M756.124 349.938C745.242 360.82 730.483 366.933 715.093 366.933C699.704 366.933 684.944 360.82 674.062 349.938C663.18 339.056 657.067 324.296 657.067 308.907C657.067 293.517 663.18 278.758 674.062 267.876C684.944 256.994 699.704 250.88 715.093 250.88C730.483 250.88 745.242 256.994 756.124 267.876C767.006 278.758 773.12 293.517 773.12 308.907C773.12 324.296 767.006 339.056 756.124 349.938Z" stroke="#55C8FF" stroke-width="37" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_3" d="M482.987 715.093H642.56C669.492 715.093 695.321 704.395 714.364 685.351C733.408 666.307 744.107 640.479 744.107 613.547C744.107 586.615 733.408 560.786 714.364 541.742C695.321 522.699 669.492 512 642.56 512H410.453C383.521 512 357.693 501.301 338.649 482.258C319.605 463.214 308.907 437.385 308.907 410.453C308.907 383.521 319.605 357.693 338.649 338.649C357.693 319.605 383.521 308.907 410.453 308.907H541.013" stroke="#55C8FF" stroke-width="37" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</g>
+<rect x="2" y="2" width="1020" height="1020" rx="222" stroke="#4183FF" stroke-opacity="0.55" stroke-width="4"/>
+</g>
+<defs>
+<filter id="filter0_f_0_4" x="-266.24" y="-307.2" width="1126.4" height="1126.4" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feGaussianBlur stdDeviation="71.68" result="effect1_foregroundBlur_0_4"/>
+</filter>
+<linearGradient id="paint0_linear_0_4" x1="6.56412" y1="203.487" x2="991.18" y2="859.897" gradientUnits="userSpaceOnUse">
+<stop stop-color="#2F6BFF"/>
+<stop offset="0.52" stop-color="#174A95"/>
+<stop offset="1" stop-color="#071A38"/>
+</linearGradient>
+<clipPath id="clip0_0_4">
+<rect width="1024" height="1024" rx="224" fill="white"/>
+</clipPath>
+</defs>
 </svg>

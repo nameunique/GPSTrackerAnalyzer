@@ -1,0 +1,23 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Android Adaptive / Background / 1024" clip-path="url(#clip0_0_4)">
+<rect width="1024" height="1024" fill="url(#paint0_linear_0_4)"/>
+<g id="Pure blue glow" filter="url(#filter0_f_0_4)">
+<circle cx="296.96" cy="256" r="419.84" fill="#67D4FF" fill-opacity="0.13"/>
+</g>
+</g>
+<defs>
+<filter id="filter0_f_0_4" x="-266.24" y="-307.2" width="1126.4" height="1126.4" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feGaussianBlur stdDeviation="71.68" result="effect1_foregroundBlur_0_4"/>
+</filter>
+<linearGradient id="paint0_linear_0_4" x1="6.56412" y1="203.487" x2="991.18" y2="859.897" gradientUnits="userSpaceOnUse">
+<stop stop-color="#2F6BFF"/>
+<stop offset="0.52" stop-color="#174A95"/>
+<stop offset="1" stop-color="#071A38"/>
+</linearGradient>
+<clipPath id="clip0_0_4">
+<rect width="1024" height="1024" fill="white"/>
+</clipPath>
+</defs>
+</svg>

@@ -1,21 +1,28 @@
-<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="1024" height="1024" fill="url(#icon-gradient)"/>
-  <g transform="translate(-92 -51)" filter="url(#blue-glow)">
-    <circle cx="388.96" cy="307" r="419.84" fill="#67D4FF" fill-opacity="0.13"/>
-  </g>
-  <g transform="translate(-92 -51)" stroke="#55C8FF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M359.876 807.124C348.994 796.242 342.88 781.483 342.88 766.093C342.88 750.704 348.994 735.944 359.876 725.062C370.758 714.18 385.517 708.067 400.907 708.067C416.296 708.067 431.056 714.18 441.938 725.062C452.82 735.944 458.933 750.704 458.933 766.093C458.933 781.483 452.82 796.242 441.938 807.124C431.056 818.006 416.296 824.12 400.907 824.12C385.517 824.12 370.758 818.006 359.876 807.124Z"/>
-    <path d="M848.124 400.938C837.242 411.82 822.483 417.933 807.093 417.933C791.704 417.933 776.944 411.82 766.062 400.938C755.18 390.056 749.067 375.296 749.067 359.907C749.067 344.517 755.18 329.758 766.062 318.876C776.944 307.994 791.704 301.88 807.093 301.88C822.483 301.88 837.242 307.994 848.124 318.876C859.006 329.758 865.12 344.517 865.12 359.907C865.12 375.296 859.006 390.056 848.124 400.938Z"/>
-    <path d="M574.987 766.093H734.56C761.492 766.093 787.321 755.395 806.364 736.351C825.408 717.307 836.107 691.479 836.107 664.547C836.107 637.615 825.408 611.786 806.364 592.742C787.321 573.699 761.492 563 734.56 563H502.453C475.521 563 449.693 552.301 430.649 533.258C411.605 514.214 400.907 488.385 400.907 461.453C400.907 434.521 411.605 408.693 430.649 389.649C449.693 370.605 475.521 359.907 502.453 359.907H633.013"/>
-  </g>
-  <defs>
-    <filter id="blue-glow" x="-174.24" y="-256.2" width="1126.4" height="1126.4" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
-      <feGaussianBlur stdDeviation="71.68"/>
-    </filter>
-    <linearGradient id="icon-gradient" x1="6.5641" y1="203.487" x2="991.18" y2="859.897" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#2F6BFF"/>
-      <stop offset="0.52" stop-color="#174A95"/>
-      <stop offset="1" stop-color="#071A38"/>
-    </linearGradient>
-  </defs>
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Android Adaptive / Composite / 1024" clip-path="url(#clip0_0_4)">
+<rect width="1024" height="1024" fill="url(#paint0_linear_0_4)"/>
+<g id="Pure blue glow" filter="url(#filter0_f_0_4)">
+<circle cx="296.96" cy="256" r="419.84" fill="#67D4FF" fill-opacity="0.13"/>
+</g>
+<g id="Route Glyph / Adaptive Composite / Safe Zone">
+<path id="Vector" d="M306.936 717.064C297.795 707.923 292.659 695.526 292.659 682.598C292.659 669.671 297.795 657.273 306.936 648.132C316.077 638.991 328.474 633.856 341.402 633.856C354.329 633.856 366.727 638.991 375.868 648.132C385.009 657.273 390.144 669.671 390.144 682.598C390.144 695.526 385.009 707.923 375.868 717.064C366.727 726.205 354.329 731.341 341.402 731.341C328.474 731.341 316.077 726.205 306.936 717.064Z" stroke="#55C8FF" stroke-width="31.08" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_2" d="M717.064 375.868C707.923 385.009 695.526 390.144 682.598 390.144C669.671 390.144 657.273 385.009 648.132 375.868C638.991 366.727 633.856 354.329 633.856 341.402C633.856 328.474 638.991 316.076 648.132 306.936C657.273 297.795 669.671 292.659 682.598 292.659C695.526 292.659 707.923 297.795 717.064 306.936C726.205 316.076 731.341 328.474 731.341 341.402C731.341 354.329 726.205 366.727 717.064 375.868Z" stroke="#55C8FF" stroke-width="31.08" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_3" d="M487.629 682.598H621.671C644.293 682.598 665.99 673.612 681.986 657.615C697.983 641.618 706.97 619.922 706.97 597.299C706.97 574.676 697.983 552.98 681.986 536.984C665.99 520.987 644.293 512 621.671 512H426.701C404.078 512 382.382 503.013 366.385 487.016C350.389 471.02 341.402 449.324 341.402 426.701C341.402 404.078 350.389 382.382 366.385 366.385C382.382 350.388 404.078 341.402 426.701 341.402H536.371" stroke="#55C8FF" stroke-width="31.08" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</g>
+<defs>
+<filter id="filter0_f_0_4" x="-266.24" y="-307.2" width="1126.4" height="1126.4" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feGaussianBlur stdDeviation="71.68" result="effect1_foregroundBlur_0_4"/>
+</filter>
+<linearGradient id="paint0_linear_0_4" x1="6.56412" y1="203.487" x2="991.18" y2="859.897" gradientUnits="userSpaceOnUse">
+<stop stop-color="#2F6BFF"/>
+<stop offset="0.52" stop-color="#174A95"/>
+<stop offset="1" stop-color="#071A38"/>
+</linearGradient>
+<clipPath id="clip0_0_4">
+<rect width="1024" height="1024" fill="white"/>
+</clipPath>
+</defs>
 </svg>

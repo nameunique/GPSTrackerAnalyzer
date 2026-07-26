@@ -106,6 +106,54 @@ void main() {
     await tester.pump(const Duration(milliseconds: 700));
   });
 
+  testWidgets('weak GPS preflight can start a measurement', (tester) async {
+    _configurePhoneViewport(tester);
+    final telemetry = FakeGpsTelemetryRepository(
+      initialConnection: GpsTelemetryConnectionState.connected,
+    );
+    final store = InMemorySessionStore();
+    addTearDown(telemetry.close);
+    await _pumpApp(tester, telemetry, store);
+
+    telemetry.emitSample(
+      mobileTestSample(receivedAt: DateTime.now(), fixType: 2),
+    );
+    await tester.pump();
+    tester
+        .widget<M03HomeScreen>(find.byType(M03HomeScreen))
+        .onNewMeasurement!();
+    await tester.pump();
+    tester
+        .widget<M05RecordLimitScreen>(find.byType(M05RecordLimitScreen))
+        .onContinue!(RecordLimit.records200);
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.byKey(const ValueKey('screen-M06B')), findsOneWidget);
+    expect(find.text('Начать замер'), findsOneWidget);
+    expect(find.text('Ждём точный GPS…'), findsNothing);
+
+    await tester.tap(find.text('Начать замер'));
+    await tester.pump();
+    await tester.pump();
+
+    expect(find.byKey(const ValueKey('screen-E03')), findsOneWidget);
+    final cubit = BlocProvider.of<RecordingCubit>(
+      tester.element(find.byKey(const ValueKey('screen-E03'))),
+    );
+    expect(cubit.state.isRecording, isTrue);
+
+    telemetry.emitSample(
+      mobileTestSample(receivedAt: DateTime.now(), fixType: 2),
+    );
+    await tester.pump();
+    expect(cubit.state.sampleCount, 1);
+
+    await tester.runAsync(cubit.stopRecording);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 700));
+  });
+
   testWidgets(
     'GPS readiness requires configured fix, connection and fresh data',
     (tester) async {
@@ -164,6 +212,48 @@ void main() {
       expect(device.gpsReady, isFalse);
     },
   );
+
+  testWidgets('active recording cannot switch to another device', (
+    tester,
+  ) async {
+    _configurePhoneViewport(tester);
+    final telemetry = FakeGpsTelemetryRepository(
+      initialConnection: GpsTelemetryConnectionState.connected,
+    );
+    final store = InMemorySessionStore();
+    addTearDown(telemetry.close);
+    await _pumpApp(tester, telemetry, store);
+
+    tester.widget<M03HomeScreen>(find.byType(M03HomeScreen)).onTabSelected!(
+      MobileTab.device,
+    );
+    await tester.pump();
+    final changeDevice = tester
+        .widget<M16DeviceScreen>(find.byType(M16DeviceScreen))
+        .onChangeDevice!;
+
+    tester.widget<M16DeviceScreen>(find.byType(M16DeviceScreen)).onTabSelected!(
+      MobileTab.home,
+    );
+    await tester.pump();
+    await _startReadyRecording(tester, telemetry);
+
+    changeDevice();
+    await tester.pump();
+
+    expect(find.byKey(const ValueKey('screen-M07')), findsOneWidget);
+    expect(find.text('Сначала завершите текущий замер'), findsOneWidget);
+    expect(telemetry.disconnectCalls, 0);
+    expect(telemetry.startScanCalls, 0);
+
+    final cubit = BlocProvider.of<RecordingCubit>(
+      tester.element(find.byKey(const ValueKey('screen-M07'))),
+    );
+    expect(cubit.state.isRecording, isTrue);
+    await tester.runAsync(cubit.stopRecording);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 700));
+  });
 
   testWidgets('scan timeout keeps an empty completed state and can retry', (
     tester,

@@ -78,6 +78,58 @@ void main() {
       expect(find.byKey(const ValueKey('screen-M03')), findsOneWidget);
     });
 
+    testWidgets('connected device can be changed explicitly from M16', (
+      tester,
+    ) async {
+      _configurePhoneViewport(tester);
+      final telemetry = FakeGpsTelemetryRepository(
+        devices: const <BleDeviceInfo>[
+          BleDeviceInfo(remoteId: 'tracker-a', name: 'Tracker A', rssi: -44),
+          BleDeviceInfo(remoteId: 'tracker-b', name: 'Tracker B', rssi: -58),
+        ],
+      );
+      addTearDown(telemetry.close);
+      await _pumpFlow(tester, telemetry);
+      await _openSearch(tester);
+
+      await tester.tap(find.byKey(const ValueKey('search-connect-tracker-a')));
+      await tester.pumpAndSettle();
+      tester.widget<M03HomeScreen>(find.byType(M03HomeScreen)).onTabSelected!(
+        MobileTab.device,
+      );
+      await tester.pump();
+
+      expect(find.byKey(const ValueKey('screen-M16')), findsOneWidget);
+      expect(find.text('Tracker A'), findsOneWidget);
+      expect(find.byKey(const ValueKey('device-change')), findsOneWidget);
+      expect(
+        tester.getSize(find.byKey(const ValueKey('device-change'))).height,
+        greaterThanOrEqualTo(48),
+      );
+
+      await tester.tap(find.byKey(const ValueKey('device-change')));
+      await tester.pump();
+
+      expect(telemetry.disconnectCalls, 1);
+      expect(telemetry.startScanCalls, 2);
+      expect(find.byKey(const ValueKey('screen-M02')), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('search-device-tracker-a')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('search-device-tracker-b')),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.byKey(const ValueKey('search-connect-tracker-b')));
+      await tester.pumpAndSettle();
+
+      expect(telemetry.connectedRemoteIds, <String>['tracker-a', 'tracker-b']);
+      expect(find.byKey(const ValueKey('screen-M16')), findsOneWidget);
+      expect(find.text('Tracker B'), findsOneWidget);
+    });
+
     testWidgets('an empty discovery update removes stale result rows', (
       tester,
     ) async {
